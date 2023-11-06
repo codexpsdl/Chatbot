@@ -116,6 +116,6 @@ while True:
     sys.exit()
   result = chain({"question": query, "chat_history": chat_history})
   print(result['answer'])
-
+  print("k")
   chat_history.append((query, result['answer']))
   query = None
