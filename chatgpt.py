@@ -60,15 +60,15 @@ client = qdrant_client.QdrantClient(
   os.getenv('QDRANT_HOST'),
   api_key=os.getenv('QDRANT_API_KEY')
 )
-# vectors_config = qdrant_client.http.models.VectorParams(
-#   size=1536,
-#   distance=qdrant_client.http.models.Distance.COSINE
-# )
-# client.recreate_collection(
-#   collection_name=os.getenv('QDRANT_COLLECTION_NAME'),
-#   vectors_config=vectors_config
-# )
-#
+vectors_config = qdrant_client.http.models.VectorParams(
+  size=1536,
+  distance=qdrant_client.http.models.Distance.COSINE
+)
+client.recreate_collection(
+  collection_name=os.getenv('QDRANT_COLLECTION_NAME'),
+  vectors_config=vectors_config
+)
+
 embeddings = OpenAIEmbeddings()
 vector_store = Qdrant(
   client=client,
@@ -108,14 +108,14 @@ chain = ConversationalRetrievalChain.from_llm(
   retriever=vector_store.as_retriever(search_kwargs={"k": 1})
 )
 
-chat_history = []
-while True:
-  if not query:
-    query = input("Prompt: ")
-  if query in ['quit', 'q', 'exit']:
-    sys.exit()
-  result = chain({"question": query, "chat_history": chat_history})
-  print(result['answer'])
-  print("k")
-  chat_history.append((query, result['answer']))
-  query = None
+# chat_history = []
+# while True:
+#   if not query:
+#     query = input("Prompt: ")
+#   if query in ['quit', 'q', 'exit']:
+#     sys.exit()
+#   result = chain({"question": query, "chat_history": chat_history})
+#   print(result['answer'])
+#   print("k")
+#   chat_history.append((query, result['answer']))
+#   query = None
