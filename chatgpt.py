@@ -13,6 +13,7 @@ from langchain.indexes import VectorstoreIndexCreator
 from langchain.chains import RetrievalQA
 from langchain.indexes.vectorstore import VectorStoreIndexWrapper
 from langchain.llms import OpenAI
+from langchain.schema import retriever
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.vectorstores import Chroma, __all__
 import constants
@@ -71,40 +72,23 @@ def read_files_in_folder(folder_path):
   file_contents = {}
 
   for file_name in os.listdir(folder_path):
-
     file_path = os.path.join(folder_path, file_name)
-
     if os.path.isfile(file_path):
-
       if file_path.endswith('.txt'):
-
         with open(file_path, 'r', encoding='utf-8') as file:
-
           file_contents[file_name] = file.read()
-
       elif file_path.endswith('.pdf'):
-
         with open(file_path, 'rb') as file:
-
           pdf_reader = PdfReader(file)
-
           text = ''
-
           for page_num in range(len(pdf_reader.pages)):
             text += pdf_reader.pages[page_num].extract_text()
-
           file_contents[file_name] = text
-
-      elif file_path.endswith('.html'):
-
+    elif file_path.endswith('.html'):
         with open(file_path, 'r', encoding='utf-8') as file:
-
           soup = BeautifulSoup(file, 'html.parser')
-
           text = ' '.join(soup.stripped_strings)
-
           file_contents[file_name] = text
-
   return file_contents
 
 load_dotenv()
@@ -164,9 +148,15 @@ if len(sys.argv) > 1:
 #   print(f"File: {file_name}, Content: {content}")
 
 chain = ConversationalRetrievalChain.from_llm(
-  llm=ChatOpenAI(model="gpt-3.5-turbo"),
+  llm=ChatOpenAI(model="gpt-3.5-turbo", temperature="0", streaming="True", max_retries=2),
   # retriever from repo
   # retriever=index.vector_store.as_retriever(search_kwargs={"k": 1}),
+  retriever=vector_store.as_retriever(search_kwargs={"k": 1})
+)
+
+qa = RetrievalQA.from_chain_type(
+  llm=ChatOpenAI(model="gpt-4-32k-0613"),
+  chain_type="stuff",
   retriever=vector_store.as_retriever(search_kwargs={"k": 1})
 )
 
@@ -176,7 +166,12 @@ while True:
     query = input("Prompt: ")
   if query in ['quit', 'q', 'exit']:
     sys.exit()
+  print("loading chain")
   result = chain({"question": query, "chat_history": chat_history})
+  # res = qa.run(query)
+  print("loaded chain")
+  # print(res)
   print(result['answer'])
   chat_history.append((query, result['answer']))
+  # chat_history.append((query, res))
   query = None
